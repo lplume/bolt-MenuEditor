@@ -17,9 +17,35 @@ $(document).ready(function() {
     });
 
     // select2
-    $('select.me-addct').select2({
-        placeholder: trans_additem
+    $("div.me-addct").select2({
+        placeholder: trans_searchitem,
+        minimumInputLength: 3,
+        ajax: {
+            type: 'post',
+            url: '',
+            dataType: 'json',
+            quietMillis: 100,
+            data: function(term, page) {
+                return {
+                    action: 'search-contenttypes',
+                    ct: $('select.me-addct-filter').val(),
+                    q: term,
+                    page_limit: 100
+                };
+            },
+            results: function(data, page) {
+                var records = Array();
+                for (record in data.records[0]) {
+                    records.push({id:data.records[0][record].values.id, text:data.records[0][record].values.title, slug:data.records[0][record].values.slug, contenttype:data.records[0][record].contenttype.slug});
+                }
+
+                $('.select2-container.me-addct').removeClass('select2error');
+
+                return {results: records}
+            }
+        }
     });
+
     $('select.me-addsp').select2({
         placeholder: trans_additem
     });
@@ -43,8 +69,18 @@ $(document).ready(function() {
 
     // prefill label for contenttypes
     $(".me-addct").on('change', function() {
-        $('#me-addct-label').val($(this).select2("data").text);
-        $('#me-addct-path').val($($(this).select2("data").element[0]).data('slug') + "/" + $(this).select2("val"));
+        var slug = $($(this).select2("data"))[0].slug;
+        $("#me-addct-label").val($(this).select2("data").text);
+        $("#me-addct-path").val($($(this).select2("data"))[0].contenttype + "/" + slug)
+    });
+
+    $(".me-addct-filter").on('change', function() {
+        $(this).parent().find('.select2-choice').addClass('select2-default');
+        $(this).parent().find('.select2-chosen').html(trans_searchitem);
+        $('#me-addct-label').val("");
+        $('#me-addct-path').val("");
+        $('#me-addct-class').val("");
+        $('#me-addct-title').val("");
     });
 
     // prefill label for specialpages
@@ -146,7 +182,8 @@ $(document).ready(function() {
             editTemplate = editTemplate.replace('[title]', $('#me-addct-title').val());
             editTemplate = editTemplate.replace('[class]', $('#me-addct-class').val());
 
-
+            $(this).parent().find('.select2-choice').addClass('select2-default');
+            $(this).parent().find('.select2-chosen').html(trans_searchitem);
             $('#me-addct-label').val("");
             $('#me-addct-path').val("");
             $('#me-addct-class').val("");
